@@ -1,0 +1,3 @@
+[submodule "aioxnat"]
+	path = aioxnat
+	url = https://github.com/WilkinsonK/aioxnat.git
