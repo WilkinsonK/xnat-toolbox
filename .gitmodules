@@ -1,6 +1,3 @@
 [submodule "aioxnat"]
 	path = aioxnat
 	url = https://github.com/WilkinsonK/aioxnat.git
-[submodule "tasknat"]
-	path = tasknat
-	url = https://github.com/WilkinsonK/tasxnat.git
