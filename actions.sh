@@ -12,7 +12,7 @@ build() {
 
 # Install package in local virtual environment.
 local() {
-    find dist/ -type f -iname "*.whl" | xargs python -m pip install
+    find dist/ -type f -iname "*.whl" | xargs python -m pip install --force-reinstall
 }
 
 publish() {
