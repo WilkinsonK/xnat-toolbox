@@ -16,7 +16,7 @@ local() {
 }
 
 publish() {
-    python -m twine dist/*
+    python -m twine upload dist/*
 }
 
 for command in "$@"
