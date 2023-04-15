@@ -10,3 +10,9 @@ fi
 python3 -m venv .venv
 .venv/bin/pip3 install -U pip && .venv/bin/pip3 install click==8.1.3 wheel
 .venv/bin/python3 -m xnat_toolbox.actions toolbox init
+
+SITE_PACKAGES=`.venv/bin/python3 -c 'import site; print(site.getsitepackages()[0])'`
+for submodule in `git submodule | cut -d' ' -f3`
+do
+    echo $(pwd)/$submodule > ${SITE_PACKAGES}/${submodule}.pth
+done
