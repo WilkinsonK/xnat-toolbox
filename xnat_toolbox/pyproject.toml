@@ -14,6 +14,9 @@ dynamic = ["version", "dependencies"]
 [project.scripts]
 actions = "xnat_toolbox.actions:main_cli"
 
+[options]
+exclude = ["tests"]
+
 [tool.setuptools.dynamic]
 version = { attr = "xnat_toolbox.__version__" }
 dependencies = { file = "requirements.txt" }
