@@ -39,7 +39,7 @@ def callpy(*args: str, **kwds):
     with_subprocess([sys.executable, *args], **kwds)
 
 
-def git(*args: str, **kwds):
+def callgit(*args: str, **kwds):
     with_subprocess(["git", *args], **kwds)
 
 
@@ -89,7 +89,7 @@ class dir_context:
             self.pop()
 
 
-@click.group()
+@click.group
 def main_cli():
     """
     Actions available for this environment used
@@ -100,7 +100,7 @@ def main_cli():
 # --------------------------------------------- #
 # MODULE SUBCOMMAND DIRECTIVES
 # --------------------------------------------- #
-@main_cli.group()
+@main_cli.group
 def module():
     """Actions specific to submodules."""
 
@@ -123,6 +123,20 @@ def build(submodule: str, *, clean: bool):
             shutil.rmtree(ctx.current / f"{submodule}.egg-info")
 
         build_local_package()
+
+
+@module.command
+@click.argument("submodule")
+@click.argument("message")
+@click.option("--force", is_flag=True)
+def update(submodule: str, message: str, *, force: bool):
+    """Commits and push changes to remote."""
+
+    with dir_context(as_submodule(submodule)):
+        callgit("commit", "-am", message)
+        callgit(*(("push", "--force") if force else ("push",)))
+
+    callgit("submodule", "update")
 
 
 @module.command
@@ -158,6 +172,7 @@ def init(*, clean: bool):
             shutil.rmtree(ctx.current / "dist")
             shutil.rmtree(ctx.current / f"xnat_toolbox.egg-info")
 
+        callgit("submodule", "init")
         build_local_package()
         install_local_package()
   
