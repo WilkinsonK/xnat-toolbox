@@ -1,4 +1,9 @@
 #!python3
+
+"""
+Helper actions for submodule development.
+"""
+
 import pathlib, os, shutil, subprocess, sys
 import typing
 
@@ -15,7 +20,7 @@ def as_absolute(path: os.PathLike | str):
     return pathlib.Path(path).absolute()
 
 
-def as_project(path: os.PathLike | str):
+def as_submodule(path: os.PathLike | str):
     return pathlib.Path.cwd() / path
 
 
@@ -86,38 +91,46 @@ class dir_context:
 
 @click.group()
 def main_cli():
-    """Actions available for this environment."""
+    """
+    Actions available for this environment used
+    to develop submodules of this project.
+    """
 
 
-@main_cli.command
-@click.argument("project")
+@main_cli.group()
+def module():
+    """Actions specific to submodules."""
+
+
+@module.command
+@click.argument("submodule")
 @click.option("-c", "--clean",
               is_flag=True,
               help="invalidates all build files.")
-def build(project: str, *, clean: bool):
+def build(submodule: str, *, clean: bool):
     """
     Builds a package distributable from the
     target project.
     """
 
-    with dir_context(as_project(project)) as ctx:
+    with dir_context(as_submodule(submodule)) as ctx:
         if clean:
             shutil.rmtree(ctx.current / "build")
             shutil.rmtree(ctx.current / "dist")
-            shutil.rmtree(ctx.current / f"{project}.egg-info")
+            shutil.rmtree(ctx.current / f"{submodule}.egg-info")
 
         build_local_package()
 
 
-@main_cli.command
-@click.argument("project")
-def publish(project: str):
+@module.command
+@click.argument("submodule")
+def publish(submodule: str):
     """
     Publish the target package. This command
     assumes that the project has been built.
     """
 
-    with dir_context(as_project(project)):
+    with dir_context(as_submodule(submodule)):
         callpy("-m", "twine", "upload", "dist/*")
 
 
@@ -133,7 +146,7 @@ def toolbox():
 def init(*, clean: bool):
     """Initialize this project from scratch."""
 
-    with dir_context(as_project("xnat_toolbox")) as ctx:
+    with dir_context(as_submodule("xnat_toolbox")) as ctx:
         if clean:
             shutil.rmtree(ctx.current / "build")
             shutil.rmtree(ctx.current / "dist")
