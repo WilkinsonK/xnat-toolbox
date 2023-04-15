@@ -97,6 +97,9 @@ def main_cli():
     """
 
 
+# --------------------------------------------- #
+# MODULE SUBCOMMAND DIRECTIVES
+# --------------------------------------------- #
 @main_cli.group()
 def module():
     """Actions specific to submodules."""
@@ -134,6 +137,9 @@ def publish(submodule: str):
         callpy("-m", "twine", "upload", "dist/*")
 
 
+# --------------------------------------------- #
+# TOOLBOX SUBCOMMAND DIRECTIVES
+# --------------------------------------------- #
 @main_cli.group
 def toolbox():
     """Actions specific to this project."""
