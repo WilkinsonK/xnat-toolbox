@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -eu -o pipefail
+
+if [[ -d .venv ]]; then
+    echo "error: virtual environment already exists."
+    exit 1
+fi
+
+python3 -m venv .venv
+.venv/bin/pip3 install -U pip && .venv/bin/pip3 install click==8.1.3 wheel
+.venv/bin/python3 -m xnat_toolbox.actions toolbox init
