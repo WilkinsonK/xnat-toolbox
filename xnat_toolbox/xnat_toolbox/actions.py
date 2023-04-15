@@ -5,12 +5,18 @@ import typing
 import click
 
 
+def panic(reason: str):
+    click.echo(reason)
+    click.echo("exiting.")
+    exit(1)
+
+
 def as_absolute(path: os.PathLike | str):
     return pathlib.Path(path).absolute()
 
 
 def as_project(path: os.PathLike | str):
-    return pathlib.Path(__file__).parent / path
+    return pathlib.Path.cwd() / path
 
 
 def with_subprocess(cmd: typing.Iterable[str], strict: bool | None = None):
@@ -30,6 +36,19 @@ def callpy(*args: str, **kwds):
 
 def git(*args: str, **kwds):
     with_subprocess(["git", *args], **kwds)
+
+
+def build_local_package():
+    callpy("-c",
+            "import setuptools; setuptools.setup()",
+            "sdist",
+            "bdist_wheel")
+
+
+def install_local_package():
+    wheels = pathlib.Path.cwd().glob("*/*.whl")
+    for wheel in wheels:
+        callpy("-m", "pip", "install", str(wheel), "--force-reinstall")
 
 
 class dir_context:
@@ -87,10 +106,7 @@ def build(project: str, *, clean: bool):
             shutil.rmtree(ctx.current / "dist")
             shutil.rmtree(ctx.current / f"{project}.egg-info")
 
-        callpy("-c",
-               "import setuptools; setuptools.setup()",
-               "sdist",
-               "bdist_wheel")
+        build_local_package()
 
 
 @main_cli.command
@@ -101,9 +117,31 @@ def publish(project: str):
     assumes that the project has been built.
     """
 
-    with dir_context(as_project(project)) as ctx:
+    with dir_context(as_project(project)):
         callpy("-m", "twine", "upload", "dist/*")
 
+
+@main_cli.group
+def toolbox():
+    """Actions specific to this project."""
+
+
+@toolbox.command
+@click.option("-c", "--clean",
+              is_flag=True,
+              help="invalidates all build files.")
+def init(*, clean: bool):
+    """Initialize this project from scratch."""
+
+    with dir_context(as_project("xnat_toolbox")) as ctx:
+        if clean:
+            shutil.rmtree(ctx.current / "build")
+            shutil.rmtree(ctx.current / "dist")
+            shutil.rmtree(ctx.current / f"xnat_toolbox.egg-info")
+
+        build_local_package()
+        install_local_package()
+  
 
 if __name__ == "__main__":
     exit(main_cli())
