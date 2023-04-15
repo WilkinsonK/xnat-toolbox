@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xnat-toolbox"
+description = "Tools and helpers used in XNAT scripting."
+authors = [
+    {name = "Keenan W. Wilkinson", email = "keenanwilkinson@outlook.com"}
+]
+license = { text = "MIT" }
+dynamic = ["version", "dependencies"]
+
+[tool.setuptools.dynamic]
+version = { attr = "attributes.__version__" }
+dependencies = { file = "requirements.txt" }
