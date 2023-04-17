@@ -36,5 +36,4 @@ twine==4.0.2
 typing_extensions==4.5.0
 urllib3==1.26.15
 webencodings==0.5.1
-xnat-toolbox @ file:///Users/kwilkinson/usr/dev/project/xnat-toolbox/xnat_toolbox/dist/xnat_toolbox-0.0.0-py3-none-any.whl#sha256=e8dd8a8ae2f626cb8ee106a99e6803fdcd9556ddd73b99f53cec741c3ea75aa0
 zipp==3.15.0
