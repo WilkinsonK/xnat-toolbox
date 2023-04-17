@@ -107,6 +107,18 @@ def module():
 
 @module.command
 @click.argument("submodule")
+def test(submodule: str):
+    """
+    Executes pytest on the submodule's test
+    suite.
+    """
+
+    with dir_context(as_submodule(submodule)):
+        with_subprocess(["pytest"])
+
+
+@module.command
+@click.argument("submodule")
 @click.option("-c", "--clean",
               is_flag=True,
               help="invalidates all build files.")
