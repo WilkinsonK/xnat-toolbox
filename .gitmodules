@@ -4,3 +4,6 @@
 [submodule "tasxnat"]
 	path = tasxnat
 	url = https://github.com/WilkinsonK/tasxnat.git
+[submodule "xmlxnat"]
+	path = xmlxnat
+	url = https://github.com/WilkinsonK/xmlxnat.git
