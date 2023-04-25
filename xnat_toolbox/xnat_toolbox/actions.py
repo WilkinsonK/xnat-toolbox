@@ -107,14 +107,22 @@ def module():
 
 @module.command
 @click.argument("submodule")
-def test(submodule: str):
+@click.option("--full-trace", is_flag=True, default=False)
+@click.option("--verbose", is_flag=True, default=False)
+def test(submodule: str, full_trace: bool, verbose: bool):
     """
     Executes pytest on the submodule's test
     suite.
     """
 
+    args = ["pytest"]
+    if full_trace:
+        args.append("--full-trace")
+    if verbose:
+        args.append("--verbose")
+
     with dir_context(as_submodule(submodule)):
-        with_subprocess(["pytest"])
+        with_subprocess(args)
 
 
 @module.command
