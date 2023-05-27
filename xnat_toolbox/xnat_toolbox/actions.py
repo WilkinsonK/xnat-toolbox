@@ -4,7 +4,7 @@
 Helper actions for submodule development.
 """
 
-import pathlib, os, shutil, subprocess, sys
+import pathlib, os, shutil, site, subprocess, sys
 import typing
 
 import click
@@ -107,26 +107,6 @@ def module():
 
 @module.command
 @click.argument("submodule")
-@click.option("--full-trace", is_flag=True, default=False)
-@click.option("--verbose", is_flag=True, default=False)
-def test(submodule: str, full_trace: bool, verbose: bool):
-    """
-    Executes pytest on the submodule's test
-    suite.
-    """
-
-    args = ["pytest"]
-    if full_trace:
-        args.append("--full-trace")
-    if verbose:
-        args.append("--verbose")
-
-    with dir_context(as_submodule(submodule)):
-        with_subprocess(args)
-
-
-@module.command
-@click.argument("submodule")
 @click.option("-c", "--clean",
               is_flag=True,
               help="invalidates all build files.")
@@ -147,16 +127,15 @@ def build(submodule: str, *, clean: bool):
 
 @module.command
 @click.argument("submodule")
-@click.argument("message")
-@click.option("--force", is_flag=True)
-def update(submodule: str, message: str, *, force: bool):
-    """Commits and push changes to remote."""
+@click.option("-d", "--dynamic/--static")
+def install(submodule: str):
+    """
+    Installs the target package in the
+    environment.
+    """
 
-    with dir_context(as_submodule(submodule)):
-        callgit("commit", "-am", message)
-        callgit(*(("push", "--force") if force else ("push",)))
-
-    callgit("submodule", "update")
+    pth_file = pathlib.Path(site.getsitepackages()[0]) / f"{submodule}.pth"
+    pth_file.write_text(as_submodule(submodule))
 
 
 @module.command
@@ -169,6 +148,40 @@ def publish(submodule: str):
 
     with dir_context(as_submodule(submodule)):
         callpy("-m", "twine", "upload", "dist/*")
+
+
+@module.command
+@click.argument("submodule")
+@click.option("--full-trace", is_flag=True, default=False)
+@click.option("--verbose", is_flag=True, default=False)
+def test(submodule: str, full_trace: bool, verbose: bool):
+    """
+    Executes pytest on the submodule's test
+    suite.
+    """
+
+    args = ["pytest"]
+    if full_trace:
+        args.append("--full-trace")
+    if verbose:
+        args.append("--verbose")
+
+    with dir_context(as_submodule(submodule)):
+        with_subprocess(args)
+
+
+@module.command
+@click.argument("submodule")
+@click.argument("message")
+@click.option("--force", is_flag=True)
+def update(submodule: str, message: str, *, force: bool):
+    """Commits and push changes to remote."""
+
+    with dir_context(as_submodule(submodule)):
+        callgit("commit", "-am", message)
+        callgit(*(("push", "--force") if force else ("push",)))
+
+    callgit("submodule", "update")
 
 
 # --------------------------------------------- #
