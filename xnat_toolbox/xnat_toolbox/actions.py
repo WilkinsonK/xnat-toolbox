@@ -134,13 +134,14 @@ def install(submodule: str, dynamic: bool):
     environment.
     """
 
-    if dynamic:
+    if not dynamic:
         pth_file = pathlib.Path(site.getsitepackages()[0]) / f"{submodule}.pth"
         pth_file.write_text(str(as_submodule(submodule)))
         return
-    
+
     with dir_context(as_submodule(submodule)):
         build_local_package()
+        install_local_package()
 
 
 @module.command
