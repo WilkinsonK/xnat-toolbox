@@ -6,6 +6,7 @@ _Ps = typing.ParamSpec("_Ps")
 RawMapping = typing.Mapping[str, str]
 StringMappedAlias = MappedAlias[typing.LiteralString]
 IntMappedAlias = MappedAlias[int]
+Unknown = UnknownType()
 Validator = typing.Callable[typing.Concatenate[ModelI, _Ps], bool]
 """
 Callable returning whether object passes
@@ -15,11 +16,6 @@ validation.
 def isvalidator(callable: typing.Callable) -> bool:
     """
     Whether the given callable is a `Validator`.
-    """
-def mapped_alias(cls: type[_Ta], alias: str, default: typing.Optional[_Ta] = ...) -> MappedAlias[_Ta]:
-    """
-    Field is translated into and from some
-    mapping using the given alias.
     """
 @typing.overload
 def validator(**params) -> Validator: ...
@@ -94,13 +90,16 @@ class ModelMeta(abc.ABCMeta): ...
 
 @typing.dataclass_transform()
 class Model(ModelI, metaclass=ModelMeta):
-    """
-    XNAT Object from RESTful representation.
-    """
     URI: typing.LiteralString
 
 class File(Model, metaclass=ModelMeta):
     """File in XNAT archive."""
+    cat_id: typing.Annotated[StringMappedAlias, "cat_ID", Unknown]
+    content: typing.Annotated[StringMappedAlias, "file_content", Unknown]
+    format: typing.Annotated[StringMappedAlias, "file_format", Unknown]
+    name: typing.LiteralString
+    size: typing.Annotated[IntMappedAlias, "Size", 0]
+    tags: typing.Annotated[MappedAlias[tuple[str]], "file_tags", ()]
 
 class Image(File, metaclass=ModelMeta):
     """
@@ -124,13 +123,13 @@ class Scan(Model, metaclass=ModelMeta):
     Individual scan object pertaining to one or
     more individual `Image`(s).
     """
-    data_type: typing.Annotated[StringMappedAlias, "type", ""]
+    data_type: typing.Annotated[StringMappedAlias, "type", Unknown]
     description: typing.LiteralString
     id: typing.Annotated[IntMappedAlias, "ID", 0]
     project: Project
     quality: typing.Annotated[MappedAlias[ScanQuality], "quality"]
     session: Session
-    xsi_type: typing.Annotated[StringMappedAlias, "xsiType", ""]
+    xsi_type: typing.Annotated[StringMappedAlias, "xsiType", Unknown]
 
 class ScanQuality(enum.StrEnum):
     """Quality of the scan."""
@@ -140,10 +139,13 @@ class Session(Model, metaclass=ModelMeta):
     A series or collection of related `Scan`
     objects.
     """
-    id: typing.Annotated[IntMappedAlias, "xnat:subjectassessordata/id", ""]
+    id: typing.Annotated[IntMappedAlias, "xnat:subjectassessordata/id", Unknown]
     project: Project
-    subject_label: typing.Annotated[StringMappedAlias, "subject_label", ""]
+    subject_label: typing.Annotated[StringMappedAlias, "subject_label", Unknown]
     xsi_type: typing.Annotated[StringMappedAlias, "xsiType", ""]
+
+@typing.final
+class UnknownType: ...
 
 class ModelError(Exception):
     """
