@@ -128,14 +128,19 @@ def build(submodule: str, *, clean: bool):
 @module.command
 @click.argument("submodule")
 @click.option("-d", "--dynamic/--static")
-def install(submodule: str):
+def install(submodule: str, dynamic: bool):
     """
     Installs the target package in the
     environment.
     """
 
-    pth_file = pathlib.Path(site.getsitepackages()[0]) / f"{submodule}.pth"
-    pth_file.write_text(as_submodule(submodule))
+    if dynamic:
+        pth_file = pathlib.Path(site.getsitepackages()[0]) / f"{submodule}.pth"
+        pth_file.write_text(str(as_submodule(submodule)))
+        return
+    
+    with dir_context(as_submodule(submodule)):
+        build_local_package()
 
 
 @module.command
