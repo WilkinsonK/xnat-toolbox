@@ -11,15 +11,22 @@ __all__ =\
 
 import dataclasses, enum, functools, typing, warnings
 
-from models.abstracts import MappedAlias, ModelI, ModelMeta, Unknown, Validator
+from models.abstracts import\
+(
+    MappedAlias,
+    ModelI,
+    ModelMeta,
+    Unknown,
+    Validator
+)
 from models.errors import ValidatorExists, NotAValidator
 
-_IS_VALIDATOR_ATTR = "__is_validator__"
-_model_dataclass = dataclasses.dataclass(slots=True, frozen=True)
+_ATTR_IS_VALIDATOR = "__is_validator__"
+_model_dataclass = dataclasses.dataclass(slots=True, frozen=True, kw_only=True)
 
 
 def isvalidator(fn):
-    return (callable(fn) and getattr(fn, _IS_VALIDATOR_ATTR, False))
+    return (callable(fn) and getattr(fn, _ATTR_IS_VALIDATOR, False))
 
 
 def validator(fn=None, *, model=None, **kwds):
@@ -27,7 +34,7 @@ def validator(fn=None, *, model=None, **kwds):
     def inner(wrapped: Validator):
         wrapper = functools.wraps(wrapped)
         wrapped = wrapper(functools.partial(wrapped, **kwds))
-        setattr(wrapped, _IS_VALIDATOR_ATTR, True)
+        setattr(wrapped, _ATTR_IS_VALIDATOR, True)
 
         if model:
             model.insert_validator(wrapped)
@@ -76,10 +83,11 @@ class ScanQuality(enum.StrEnum):
     UNDETERMINED = enum.auto()
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Model(ModelI, metaclass=ModelMeta):
     _: dataclasses.KW_ONLY
-    URI: MappedAlias[str] = MappedAlias("URI", default=Unknown)
+    file_uri: typing.LiteralString = Unknown #type: ignore[valid-type, assignment]
+    rest_uri: MappedAlias[str] = MappedAlias("URI", default=Unknown)
 
     @property
     def is_valid(self):
@@ -179,7 +187,6 @@ class Model(ModelI, metaclass=ModelMeta):
 class File(Model):
     cat_id: MappedAlias[int] = MappedAlias("cat_ID", int)
     name: str
-
     content: MappedAlias[str] = MappedAlias("file_content", default="")
     format: MappedAlias[str] = MappedAlias("file_format", default=Unknown)
     size: MappedAlias[int] = MappedAlias("Size", int, default=0)
@@ -200,7 +207,6 @@ class Session(Model):
     id: MappedAlias[int] = MappedAlias("xnat:subjectassessordata/id", int)
     project: Project
     session_label: str
-
     subject_label: MappedAlias[str] = MappedAlias("label", default=Unknown)
     xsi_type: MappedAlias[str] = MappedAlias("xsiType", default=Unknown)
 
@@ -215,7 +221,6 @@ class Scan(Model):
     id: MappedAlias[int] = MappedAlias("ID", int)
     quality: MappedAlias[ScanQuality] = MappedAlias("quality", ScanQuality)
     session: Session
-
     data_type: MappedAlias[str] = MappedAlias("type", default=Unknown)
     xsi_type: MappedAlias[str] = MappedAlias("xsiType", default=Unknown)
 

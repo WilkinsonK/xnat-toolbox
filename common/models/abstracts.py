@@ -1,3 +1,11 @@
+__all__ =\
+(
+    "MappedAlias",
+    "ModelMeta",
+    "ModelI",
+    "Unknown"
+)
+
 import abc, typing
 
 _Ta = typing.TypeVar("_Ta")
@@ -42,13 +50,5 @@ class ModelI(typing.Protocol, metaclass=ModelMeta):
     pass
 
 
-@typing.final
-class UnknownType(int):
-    """Some unknown value."""
-
-    def __new__(cls):
-        return super().__new__(cls, 0)
-
-
-Unknown = UnknownType()
+Unknown = Ellipsis
 Validator = typing.Callable[typing.Concatenate[ModelI, _Ps], bool]

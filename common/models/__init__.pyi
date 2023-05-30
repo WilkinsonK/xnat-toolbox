@@ -6,7 +6,7 @@ _Ps = typing.ParamSpec("_Ps")
 RawMapping = typing.Mapping[str, str]
 StringMappedAlias = MappedAlias[typing.LiteralString]
 IntMappedAlias = MappedAlias[int]
-Unknown: UnknownType
+Unknown = Ellipsis
 Validator = typing.Callable[typing.Concatenate[ModelI, _Ps], bool]
 """
 Callable returning whether object passes
@@ -95,12 +95,13 @@ class ModelI(typing.Protocol):
     def __init_subclass__(cls) -> None: ...
     def __repr__(self) -> typing.LiteralString: ...
 
+@typing.dataclass_transform()
 class ModelMeta(abc.ABCMeta): ...
 
-@typing.dataclass_transform()
 class Model(ModelI, metaclass=ModelMeta):
     _: dataclasses.KW_ONLY
-    URI: typing.LiteralString
+    file_uri: typing.LiteralString
+    rest_uri: MappedAlias[typing.LiteralString]
 
 class File(Model, metaclass=ModelMeta):
     """File in XNAT archive."""
@@ -158,9 +159,6 @@ class Session(Model, metaclass=ModelMeta):
     subject_label: StringMappedAlias
     xsi_type: StringMappedAlias
 
-@typing.final
-class UnknownType(type):
-    def __new__(cls) -> UnknownType: ...
 
 class ModelError(Exception):
     """
