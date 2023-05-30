@@ -1,10 +1,10 @@
-import dataclasses, functools, typing, warnings
+import dataclasses, enum, functools, typing, warnings
 
 from models.abstracts import MappedAlias, ModelI, ModelMeta, Unknown, Validator
 from models.errors import ValidatorExists, NotAValidator
 
 _IS_VALIDATOR_ATTR = "__is_validator__"
-_model_dataclass = dataclasses.dataclass()
+_model_dataclass = dataclasses.dataclass(slots=True, frozen=True)
 
 
 def isvalidator(fn):
@@ -32,9 +32,20 @@ def _warn_validator_exists(cls, fn):
     warnings.warn(f"{cls!s} already has the validator {fn!r} registered.")
 
 
-@_model_dataclass
+class ScanQuality(enum.StrEnum):
+    USABLE = enum.auto()
+    GOOD = enum.auto()
+    FAIR = enum.auto()
+    QUESTIONABLE = enum.auto()
+    POOR = enum.auto()
+    UNUSABLE = enum.auto()
+    UNDETERMINED = enum.auto()
+
+
+@dataclasses.dataclass(frozen=True)
 class Model(ModelI, metaclass=ModelMeta):
-    URI: typing.LiteralString
+    _: dataclasses.KW_ONLY
+    URI: MappedAlias[str] = MappedAlias("URI", default="")
 
     @functools.cached_property
     def is_valid(self):
@@ -67,7 +78,9 @@ class Model(ModelI, metaclass=ModelMeta):
         for name, alias in cls.__mapped_aliases__.items():
             if not alias.alias in mapping:
                 continue
-            mapping[name] = mapping.pop(alias.alias, alias.default)
+
+            value = mapping.pop(alias.alias, alias.default)
+            mapping[name] = alias.factory(value)
 
         return cls(**mapping)
 
@@ -78,7 +91,9 @@ class Model(ModelI, metaclass=ModelMeta):
             alias = self.__mapped_aliases__.get(name, None)
             if not alias:
                 continue
-            mapping[alias.alias] = mapping.pop(name, alias.default)
+
+            value = mapping.pop(name, alias.default)
+            mapping[alias.alias] = str(value)
 
         return mapping
 
@@ -121,6 +136,7 @@ class Model(ModelI, metaclass=ModelMeta):
 
             setattr(cls, name, origin(*args))
 
+        # Final pass to find initialized alias mappings.
         for name, origin in cls.__dict__.items():
             if isinstance(origin, MappedAlias):
                 cls.__mapped_aliases__[name] = origin
@@ -130,5 +146,25 @@ class Model(ModelI, metaclass=ModelMeta):
 
 
 @_model_dataclass
+class Project(Model):
+    project_label: str
+
+
+@_model_dataclass
 class Session(Model):
-    id: MappedAlias[int] = MappedAlias[int]("xnat:subjectassessordata/id", Unknown)
+    session_label: MappedAlias[str] = MappedAlias("label")
+    id: MappedAlias[int] = MappedAlias("xnat:subjectassessordata/id", int)
+    project: Project
+    subject_label: str
+    xsi_type: MappedAlias[str] = MappedAlias("xsiType")
+
+
+@_model_dataclass
+class Scan(Model):
+    data_type: MappedAlias[str] = MappedAlias("type")
+    description: str
+    id: MappedAlias[int] = MappedAlias("ID", int)
+    project: Project
+    quality: MappedAlias[ScanQuality] = MappedAlias("quality", ScanQuality)
+    session: Session
+    xsi_type: MappedAlias[str] = MappedAlias("xsiType")

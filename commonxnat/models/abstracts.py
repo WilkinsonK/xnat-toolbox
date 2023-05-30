@@ -13,6 +13,10 @@ class MappedAlias(typing.Generic[_Ta]):
     def default(self):
         return self._default
 
+    @property
+    def factory(self):
+        return self._factory
+
     def __get__(self, owner, owner_cls=None) -> _Ta:
         return getattr(owner, self.private_name)
 
@@ -22,9 +26,10 @@ class MappedAlias(typing.Generic[_Ta]):
     def __set_name__(self, owner, name):
         self.private_name = f"__{owner.__qualname__}_{name}_"
 
-    def __init__(self, alias, default=None):
+    def __init__(self, alias, factory=None, default=None):
         self._alias = alias
         self._default = default
+        self._factory = factory or (lambda o: o)
 
 
 @typing.dataclass_transform(field_specifiers=(MappedAlias,))

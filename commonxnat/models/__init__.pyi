@@ -32,11 +32,15 @@ class MappedAlias(typing.Generic[_Ta]):
     alias is used bridge the gap from the `Model`
     object to the REST response from XNAT.
     """
-    alias: typing.LiteralString
-    default: _Ta | None
 
+    @property
+    def alias(self) -> typing.LiteralString: ...
+    @property
+    def default(self) -> _Ta | None: ...
+    @property
+    def factory(self) -> typing.Callable[[typing.Any], _Ta]: ...
     def __get__(self, owner: object, owner_cls: type | None) -> _Ta: ...
-    def __init__(self, alias: str, default: typing.Optional[_Ta] = ...) -> None: ...
+    def __init__(self, alias: str, factory: typing.Optional[typing.Callable[[typing.Any], _Ta]] = ..., default: typing.Optional[_Ta] = ...) -> None: ...
     def __set__(self, owner: object, value: _Ta) -> None: ...
     def __set_name__(self, owner: object, name: str): ...
 
@@ -52,9 +56,6 @@ class ModelI(typing.Protocol):
         """
         Whether this object is a valid instance.
         """
-    @property
-    def label(self) -> typing.LiteralString:
-        """Serial label of this object."""
     @property
     def name(self) -> typing.LiteralString | None:
         """Human readable label of this object."""
