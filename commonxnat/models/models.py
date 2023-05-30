@@ -28,6 +28,29 @@ def validator(fn=None, *, model=None, **kwds):
         return inner
 
 
+def _alias_py2xnat(obj, mapping):
+    for name in tuple(mapping.keys()): # Make copy of keys.
+        alias = obj.__mapped_aliases__.get(name, None)
+        if not alias:
+            continue
+
+        value = mapping.pop(name, alias.default)
+        mapping[alias.alias] = str(value)
+
+    return mapping
+
+
+def _alias_xnat2py(cls, mapping):
+    for name, alias in cls.__mapped_aliases__.items():
+        if not alias.alias in mapping:
+            continue
+
+        value = mapping.pop(alias.alias, alias.default)
+        mapping[name] = alias.factory(value)
+
+    return mapping
+
+
 def _warn_validator_exists(cls, fn):
     warnings.warn(f"{cls!s} already has the validator {fn!r} registered.")
 
@@ -47,7 +70,7 @@ class Model(ModelI, metaclass=ModelMeta):
     _: dataclasses.KW_ONLY
     URI: MappedAlias[str] = MappedAlias("URI", default="")
 
-    @functools.cached_property
+    @property
     def is_valid(self):
         return self.__validate__()
 
@@ -75,27 +98,23 @@ class Model(ModelI, metaclass=ModelMeta):
 
     @classmethod
     def __from_mapping__(cls, mapping):
-        for name, alias in cls.__mapped_aliases__.items():
-            if not alias.alias in mapping:
+        for name, t in typing.get_type_hints(cls):
+            if not issubclass(t, Model):
                 continue
+            mapping[name] = _alias_xnat2py(t, mapping[name])
 
-            value = mapping.pop(alias.alias, alias.default)
-            mapping[name] = alias.factory(value)
-
-        return cls(**mapping)
+        return cls(**_alias_xnat2py(cls, mapping))
 
     def __into_mapping__(self):
         mapping = dataclasses.asdict(self)
 
-        for name in tuple(mapping.keys()): # Make copy of keys.
-            alias = self.__mapped_aliases__.get(name, None)
-            if not alias:
+        for name in mapping:
+            obj = getattr(self, name)
+            if not isinstance(obj, Model):
                 continue
+            mapping[name] = _alias_py2xnat(obj, mapping[name])
 
-            value = mapping.pop(name, alias.default)
-            mapping[alias.alias] = str(value)
-
-        return mapping
+        return _alias_py2xnat(self, mapping)
 
     def __validate__(self):
         return all([fn(self) for fn in self.__validators__])
@@ -149,22 +168,33 @@ class Model(ModelI, metaclass=ModelMeta):
 class Project(Model):
     project_label: str
 
+    @property
+    def name(self):
+        return self.project_label
+
 
 @_model_dataclass
 class Session(Model):
-    session_label: MappedAlias[str] = MappedAlias("label")
     id: MappedAlias[int] = MappedAlias("xnat:subjectassessordata/id", int)
     project: Project
     subject_label: str
-    xsi_type: MappedAlias[str] = MappedAlias("xsiType")
+    session_label: MappedAlias[str] = MappedAlias("label", default=Unknown)
+    xsi_type: MappedAlias[str] = MappedAlias("xsiType", default=Unknown)
+
+    @property
+    def name(self):
+        return ":".join([self.project.name, self.session_label])
 
 
 @_model_dataclass
 class Scan(Model):
-    data_type: MappedAlias[str] = MappedAlias("type")
     description: str
     id: MappedAlias[int] = MappedAlias("ID", int)
-    project: Project
     quality: MappedAlias[ScanQuality] = MappedAlias("quality", ScanQuality)
     session: Session
-    xsi_type: MappedAlias[str] = MappedAlias("xsiType")
+    xsi_type: MappedAlias[str] = MappedAlias("xsiType", default=Unknown)
+    data_type: MappedAlias[str] = MappedAlias("type", default=Unknown)
+
+    @property
+    def name(self):
+        return ":".join([self.session.name, self.id])

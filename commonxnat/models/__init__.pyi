@@ -49,6 +49,7 @@ class ModelI(typing.Protocol):
     XNAT Object from RESTful representation.
     """
 
+    __mapped_aliases__: typing.ClassVar[dict[str, MappedAlias]]
     __validators__: typing.ClassVar[typing.Iterable[Validator]]
 
     @property
