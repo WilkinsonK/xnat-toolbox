@@ -6,21 +6,21 @@ _Ps = typing.ParamSpec("_Ps")
 RawMapping = typing.Mapping[str, str]
 StringMappedAlias = MappedAlias[typing.LiteralString]
 IntMappedAlias = MappedAlias[int]
-Unknown = UnknownType()
+Unknown: UnknownType
 Validator = typing.Callable[typing.Concatenate[ModelI, _Ps], bool]
 """
 Callable returning whether object passes
 validation.
 """
 
-def isvalidator(callable: typing.Callable) -> bool:
+def isvalidator(fn: typing.Callable) -> bool:
     """
     Whether the given callable is a `Validator`.
     """
 @typing.overload
 def validator(**params) -> Validator: ...
 @typing.overload
-def validator(callable: Validator, /) -> Validator:
+def validator(fn: Validator, /) -> Validator:
     """
     Marks some callable as a validator function.
     """
@@ -32,17 +32,20 @@ class MappedAlias(typing.Generic[_Ta]):
     alias is used bridge the gap from the `Model`
     object to the REST response from XNAT.
     """
-    def __get__(self, owner: object, owner_cls: type = ...) -> _Ta: ...
+    alias: typing.LiteralString
+    default: _Ta | None
+
+    def __get__(self, owner: object, owner_cls: type | None) -> _Ta: ...
     def __init__(self, alias: str, default: typing.Optional[_Ta] = ...) -> None: ...
-    def __set__(self, owner: object, value: _Ta): ...
-    def __set_name__(self, owner: object): ...
+    def __set__(self, owner: object, value: _Ta) -> None: ...
+    def __set_name__(self, owner: object, name: str): ...
 
 class ModelI(typing.Protocol):
     """
     XNAT Object from RESTful representation.
     """
 
-    __validators__: typing.Iterable[Validator]
+    __validators__: typing.ClassVar[typing.Iterable[Validator]]
 
     @property
     def is_valid(self) -> bool:
@@ -61,6 +64,10 @@ class ModelI(typing.Protocol):
         Transform a mapping into the given model
         class.
         """
+    @typing.overload
+    @classmethod
+    def into_mapping(cls) -> RawMapping: ...
+    @typing.overload
     @classmethod
     def into_mapping(cls, model: typing.Self) -> RawMapping:
         """
@@ -68,13 +75,13 @@ class ModelI(typing.Protocol):
         of it's values.
         """
     @classmethod
-    def insert_validator(cls, callable: Validator) -> None:
+    def insert_validator(cls, fn: Validator) -> None:
         """
         Insert a validator into this model's
         validators.
         """
     @classmethod
-    def remove_validator(cls, callable: Validator) -> Validator:
+    def remove_validator(cls, fn: Validator) -> None:
         """
         Remove the validator from this model's validators.
         """
@@ -83,8 +90,8 @@ class ModelI(typing.Protocol):
     def __into_mapping__(self) -> RawMapping: ...
     def __validate__(self) -> bool: ...
     def __init__(self, **kwds) -> None: ...
+    def __init_subclass__(cls) -> None: ...
     def __repr__(self) -> typing.LiteralString: ...
-    def __str__(self) -> typing.LiteralString: ...
 
 class ModelMeta(abc.ABCMeta): ...
 
@@ -123,13 +130,13 @@ class Scan(Model, metaclass=ModelMeta):
     Individual scan object pertaining to one or
     more individual `Image`(s).
     """
-    data_type: typing.Annotated[StringMappedAlias, "type", Unknown]
+    data_type: StringMappedAlias
     description: typing.LiteralString
-    id: typing.Annotated[IntMappedAlias, "ID", 0]
+    id: IntMappedAlias
     project: Project
-    quality: typing.Annotated[MappedAlias[ScanQuality], "quality"]
+    quality: MappedAlias[ScanQuality]
     session: Session
-    xsi_type: typing.Annotated[StringMappedAlias, "xsiType", Unknown]
+    xsi_type: StringMappedAlias
 
 class ScanQuality(enum.StrEnum):
     """Quality of the scan."""
@@ -139,13 +146,14 @@ class Session(Model, metaclass=ModelMeta):
     A series or collection of related `Scan`
     objects.
     """
-    id: typing.Annotated[IntMappedAlias, "xnat:subjectassessordata/id", Unknown]
+    id: IntMappedAlias
     project: Project
-    subject_label: typing.Annotated[StringMappedAlias, "subject_label", Unknown]
-    xsi_type: typing.Annotated[StringMappedAlias, "xsiType", ""]
+    subject_label: StringMappedAlias
+    xsi_type: StringMappedAlias
 
 @typing.final
-class UnknownType: ...
+class UnknownType(type):
+    def __new__(cls) -> UnknownType: ...
 
 class ModelError(Exception):
     """
@@ -157,4 +165,10 @@ class ValidatorExists(ModelError):
     """
     Raised when a validator already exists in the
     model's validators.
+    """
+
+class NotAValidator(ModelError):
+    """
+    Raised when an object does not qualify as a
+    Validator.
     """
