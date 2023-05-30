@@ -103,12 +103,12 @@ class Model(ModelI, metaclass=ModelMeta):
 
 class File(Model, metaclass=ModelMeta):
     """File in XNAT archive."""
-    cat_id: typing.Annotated[StringMappedAlias, "cat_ID", Unknown]
-    content: typing.Annotated[StringMappedAlias, "file_content", Unknown]
-    format: typing.Annotated[StringMappedAlias, "file_format", Unknown]
+    cat_id: StringMappedAlias
+    content: StringMappedAlias
+    format: StringMappedAlias
     name: typing.LiteralString
-    size: typing.Annotated[IntMappedAlias, "Size", 0]
-    tags: typing.Annotated[MappedAlias[tuple[str]], "file_tags", ()]
+    size: IntMappedAlias
+    tags: MappedAlias[tuple[str]]
 
 class Image(File, metaclass=ModelMeta):
     """

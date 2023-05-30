@@ -1,6 +1,7 @@
 import abc, typing
 
 _Ta = typing.TypeVar("_Ta")
+_Ps = typing.ParamSpec("_Ps")
 
 
 class MappedAlias(typing.Generic[_Ta]):
@@ -48,8 +49,6 @@ class UnknownType(int):
     def __new__(cls):
         return super().__new__(cls, 0)
 
-
-_Ps = typing.ParamSpec("_Ps")
 
 Unknown = UnknownType()
 Validator = typing.Callable[typing.Concatenate[ModelI, _Ps], bool]

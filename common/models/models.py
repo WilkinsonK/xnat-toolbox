@@ -1,3 +1,14 @@
+__all__ =\
+(
+    "isvalidator",
+    "validator",
+    "File",
+    "Model",
+    "Project",
+    "Scan",
+    "Session"
+)
+
 import dataclasses, enum, functools, typing, warnings
 
 from models.abstracts import MappedAlias, ModelI, ModelMeta, Unknown, Validator
@@ -162,6 +173,16 @@ class Model(ModelI, metaclass=ModelMeta):
 
     def __repr__(self):
         return f"<{self.__class__.__qualname__}({self.label}) @ {hex(id(self))}>"
+
+
+@_model_dataclass
+class File(Model):
+    cat_id: MappedAlias[int] = MappedAlias("cat_ID", int)
+    name: str
+    content: MappedAlias[str] = MappedAlias("file_content", default="")
+    format: MappedAlias[str] = MappedAlias("file_format", default=Unknown)
+    size: MappedAlias[int] = MappedAlias("Size", int, default=0)
+    tags: MappedAlias[tuple[str]] = MappedAlias("file_tags", tuple, default=())
 
 
 @_model_dataclass
