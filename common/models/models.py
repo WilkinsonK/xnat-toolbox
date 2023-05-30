@@ -79,7 +79,7 @@ class ScanQuality(enum.StrEnum):
 @dataclasses.dataclass(frozen=True)
 class Model(ModelI, metaclass=ModelMeta):
     _: dataclasses.KW_ONLY
-    URI: MappedAlias[str] = MappedAlias("URI", default="")
+    URI: MappedAlias[str] = MappedAlias("URI", default=Unknown)
 
     @property
     def is_valid(self):
@@ -179,6 +179,7 @@ class Model(ModelI, metaclass=ModelMeta):
 class File(Model):
     cat_id: MappedAlias[int] = MappedAlias("cat_ID", int)
     name: str
+
     content: MappedAlias[str] = MappedAlias("file_content", default="")
     format: MappedAlias[str] = MappedAlias("file_format", default=Unknown)
     size: MappedAlias[int] = MappedAlias("Size", int, default=0)
@@ -198,8 +199,9 @@ class Project(Model):
 class Session(Model):
     id: MappedAlias[int] = MappedAlias("xnat:subjectassessordata/id", int)
     project: Project
-    subject_label: str
-    session_label: MappedAlias[str] = MappedAlias("label", default=Unknown)
+    session_label: str
+
+    subject_label: MappedAlias[str] = MappedAlias("label", default=Unknown)
     xsi_type: MappedAlias[str] = MappedAlias("xsiType", default=Unknown)
 
     @property
@@ -213,8 +215,9 @@ class Scan(Model):
     id: MappedAlias[int] = MappedAlias("ID", int)
     quality: MappedAlias[ScanQuality] = MappedAlias("quality", ScanQuality)
     session: Session
-    xsi_type: MappedAlias[str] = MappedAlias("xsiType", default=Unknown)
+
     data_type: MappedAlias[str] = MappedAlias("type", default=Unknown)
+    xsi_type: MappedAlias[str] = MappedAlias("xsiType", default=Unknown)
 
     @property
     def name(self):

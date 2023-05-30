@@ -1,4 +1,4 @@
-import abc, enum, typing
+import abc, dataclasses, enum, typing
 
 _Ta = typing.TypeVar("_Ta")
 _Ps = typing.ParamSpec("_Ps")
@@ -99,14 +99,16 @@ class ModelMeta(abc.ABCMeta): ...
 
 @typing.dataclass_transform()
 class Model(ModelI, metaclass=ModelMeta):
+    _: dataclasses.KW_ONLY
     URI: typing.LiteralString
 
 class File(Model, metaclass=ModelMeta):
     """File in XNAT archive."""
     cat_id: StringMappedAlias
+    name: typing.LiteralString
+    _: dataclasses.KW_ONLY
     content: StringMappedAlias
     format: StringMappedAlias
-    name: typing.LiteralString
     size: IntMappedAlias
     tags: MappedAlias[tuple[str]]
 
@@ -120,6 +122,7 @@ class Project(Model, metaclass=ModelMeta):
     Top-level or *root* object in XNAT archive
     heirarchy.
     """
+    project_label: str
 
 class Resource(Model, metaclass=ModelMeta):
     """
@@ -132,12 +135,12 @@ class Scan(Model, metaclass=ModelMeta):
     Individual scan object pertaining to one or
     more individual `Image`(s).
     """
-    data_type: StringMappedAlias
     description: typing.LiteralString
     id: IntMappedAlias
-    project: Project
     quality: MappedAlias[ScanQuality]
     session: Session
+    _: dataclasses.KW_ONLY
+    data_type: StringMappedAlias
     xsi_type: StringMappedAlias
 
 class ScanQuality(enum.StrEnum):
@@ -150,6 +153,8 @@ class Session(Model, metaclass=ModelMeta):
     """
     id: IntMappedAlias
     project: Project
+    session_label: str
+    _: dataclasses.KW_ONLY
     subject_label: StringMappedAlias
     xsi_type: StringMappedAlias
 
