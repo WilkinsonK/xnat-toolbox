@@ -95,11 +95,24 @@ class Model(ModelI, metaclass=ModelMeta):
 
     @classmethod
     def from_mapping(cls, model_cls, mapping):
-        return model_cls.__from_mapping__(mapping)
+        for name, t in typing.get_type_hints(model_cls):
+            if not issubclass(t, Model):
+                continue
+            mapping[name] = _alias_xnat2py(t, mapping[name])
+
+        return model_cls.__from_mapping__(_alias_xnat2py(model_cls, mapping))
 
     @classmethod
     def into_mapping(cls, model):
-        return model.__into_mapping__()
+        mapping = model.__into_mapping__()
+
+        for name in mapping:
+            obj = getattr(model, name)
+            if not isinstance(obj, Model):
+                continue
+            mapping[name] = _alias_py2xnat(obj, mapping[name])
+
+        return _alias_py2xnat(model, mapping)
 
     @classmethod
     def insert_validator(cls, fn):
@@ -117,23 +130,10 @@ class Model(ModelI, metaclass=ModelMeta):
 
     @classmethod
     def __from_mapping__(cls, mapping):
-        for name, t in typing.get_type_hints(cls):
-            if not issubclass(t, Model):
-                continue
-            mapping[name] = _alias_xnat2py(t, mapping[name])
-
-        return cls(**_alias_xnat2py(cls, mapping))
+        return cls(**mapping)
 
     def __into_mapping__(self):
-        mapping = dataclasses.asdict(self)
-
-        for name in mapping:
-            obj = getattr(self, name)
-            if not isinstance(obj, Model):
-                continue
-            mapping[name] = _alias_py2xnat(obj, mapping[name])
-
-        return _alias_py2xnat(self, mapping)
+        return dataclasses.asdict(self)
 
     def __validate__(self):
         return all([fn(self) for fn in self.__validators__])

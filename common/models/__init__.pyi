@@ -66,10 +66,6 @@ class ModelI(typing.Protocol):
         Transform a mapping into the given model
         class.
         """
-    @typing.overload
-    @classmethod
-    def into_mapping(cls) -> RawMapping: ...
-    @typing.overload
     @classmethod
     def into_mapping(cls, model: typing.Self) -> RawMapping:
         """
